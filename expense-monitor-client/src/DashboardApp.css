@@ -1,0 +1,38 @@
+.chart-wrapper {
+    width: 49%;
+    height: 49%;
+}
+
+.left.chart-wrapper {
+    left: 2em;
+    position: absolute;
+}
+
+.center.chart-wrapper {
+    left: 60em;
+}
+
+.right.chart-wrapper {
+    left: 51em;
+    position: absolute;
+}
+
+.left-r2.chart-wrapper {
+    left: 2em;
+}
+
+.chartContainer {
+    margin-top: 1.5em;
+}
+
+.barChart.chart-wrapper {
+    top: 2em;
+}
+
+.loading {
+    cursor: auto;
+}
+
+.loading.right {
+    float: right;
+}

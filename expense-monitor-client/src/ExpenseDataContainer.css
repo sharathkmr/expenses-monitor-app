@@ -1,0 +1,29 @@
+.rowMargin {
+    margin:10px;
+}
+
+.searchBtnCustom {
+    float: right;
+}
+
+.addExpenseOperations {
+    float: right;
+}
+
+.addExpBtns {
+    margin-right: 0.4em;
+}
+
+.wrapText {
+    word-break: break-all;
+    max-width: 20em;
+}
+
+.loading {
+    cursor : auto
+}
+
+.col.center {
+    text-align: center;
+    display: inline-block;
+}
