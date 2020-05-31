@@ -2,17 +2,21 @@ const express = require('express');
 const mongo = require('mongodb');
 const bodyParser = require('body-parser');
 const config = require('./mongoConfig');
-var cors = require('cors');
+// var cors = require('cors');
+const path = require('path');
 
 const app = express();
 // to parse the req body
 app.use(bodyParser.urlencoded());
 app.use(bodyParser.json());
 
-// to accept the CORS reqs
-app.use(cors());
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'expense-monitor-client/build')));
 
-var port = process.env.PORT || 8080;
+// to accept the CORS reqs
+// app.use(cors());
+
+var port = process.env.PORT || 3001;
 
 const router = express.Router();
 
