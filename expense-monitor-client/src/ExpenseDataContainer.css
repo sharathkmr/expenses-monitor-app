@@ -1,23 +1,23 @@
-.rowMargin {
+/* .rowMargin {
     margin:10px;
-}
+} */
 
 .searchBtnCustom {
     float: right;
 }
 
-.addExpenseOperations {
+/* .addExpenseOperations {
     float: right;
-}
+} */
 
-.addExpBtns {
+/* .addExpBtns {
     margin-right: 0.4em;
-}
+} */
 
-.wrapText {
+/* .wrapText {
     word-break: break-all;
     max-width: 20em;
-}
+} */
 
 .loading {
     cursor : auto

@@ -3,14 +3,14 @@ import config from './config';
 import './ExpenseDataContainer.css';
 import axios from 'axios';
 import {HorizontalBarChart} from './HorizontalBarChart';
-import {getHBarData, parseDate, calculateTotalAmount, convertCurrency, getSystemTime, segregateDataByType} from './utilitiess/CommonUtils';
+import {getHBarData, parseDate, calculateTotalAmount, convertCurrency, segregateDataByType} from './utilitiess/CommonUtils';
 import ReactLoading from 'react-loading';
+import {ExpenseLogger} from './ExpenseLogger';
 
 // ExpenseDataContainer Component
 export class ExpenseDataContainer extends React.Component {
     constructor(props) {
         super(props);
-        let subCategories = this.setExpenseSubCategories(config.expenseDefaults.defaultExpenseCategory);
         this.state = {
             username : 'sharathBashini',
             selectedYear : this.props.year,
@@ -22,25 +22,8 @@ export class ExpenseDataContainer extends React.Component {
             displayedData : [], // Expense Data filtered
             incomeData : [], // Income Data
             displayedIncomeData : [], // Income Data filtered
-            // Expense Attributes
-            expenseDate : parseDate(null),
-            paymentTypes: config.paymentType,
-            paymentType: config.expenseDefaults.defaultPaymentType,
-            expenseCategories: config.expenseCategory,
-            expenseCategory: config.expenseDefaults.defaultExpenseCategory,
-            expenseSubCategories: subCategories,
-            expenseSubCategory: (subCategories) ? subCategories[0]: '',
-            expenseAmount: config.expenseDefaults.defaultAmount,
-            currency : config.currency,
-            selectedCurrency : config.expenseDefaults.defaultCurrency, // selected currency from NavBar component
-            // Income Attributes
-            incomeToggle : false,
-            incomeTypeList : config.incomeType,
-            incomeType : config.expenseDefaults.incomeType,
-            comment : '',
             hBarData : [], // Horizontal Bar Data
             loading : {
-                save : false,
                 data : true
             },
             currencyConversions : [], // to hold the exchange rates
@@ -48,31 +31,6 @@ export class ExpenseDataContainer extends React.Component {
         };
         this.currencyConversions(); // get the exchange rates on load
         this.getExpenses(); // get the expenses on load
-    }
-
-    setExpenseSubCategories(category) {
-        const subCategoriesMap = new Map(Object.entries(config.expenseSubCategories));
-        let subCategories = subCategoriesMap.get(category);
-        return subCategories;
-    }
-
-    handleIncomeToggle = (e) => {
-        let incomeToggle;
-        if(e.target.value === 'Income') {
-            incomeToggle = true;
-        } else {
-            incomeToggle = false;
-        }
-        this.setState({
-            incomeToggle : incomeToggle
-        });
-    }
-
-    incomeTypeHandler = (e) => {
-        console.log('incomeType: ',e.target.value);
-        this.setState({
-            incomeType : e.target.value
-        });
     }
 
     addExpense = () => {
@@ -119,145 +77,6 @@ export class ExpenseDataContainer extends React.Component {
             displayedIncomeData : displayedIncomeData,
             hBarData : getHBarData(totalIncome, totalExpenses)
         });
-    }
-
-    cancelAddExpense = () => {
-        this.setState({
-            toggleAddExpense : false,
-            incomeToggle : false
-        });
-    }
-
-    expenseDateChangeHandler = (e) => {
-        console.log('Selected Date: ', e.target.value);
-        this.setState({
-            expenseDate : e.target.value
-        });
-    }
-
-    paymentTypeHandler = (e) => {
-        console.log('Payment Type: ',e.target.value);
-        this.setState({
-            paymentType : e.target.value
-        });
-    }
-
-    expenseCategoryHandler = (e) => {
-        console.log('Category: ',e.target.value);
-        let subCategories = this.setExpenseSubCategories(e.target.value);
-        this.setState({
-            expenseCategory : e.target.value,
-            expenseSubCategories: subCategories,
-            expenseSubCategory : (subCategories) ? subCategories[0]: ''
-        });
-    }
-
-    expenseSubCategoryHandler = (e) => {
-        console.log('Sub Category: ',e.target.value);
-        this.setState({
-            expenseSubCategory : e.target.value
-        });
-    }
-
-    expenseAmountHandler = (e) => {
-        this.setState({
-            expenseAmount : e.target.value
-        });
-    }
-
-    currencyHandler = (e) => {
-        console.log('Currency: ', e.target.value);
-        this.setState({
-            selectedCurrency : e.target.value
-        });
-    }
-
-    commentHandler = (e) => {
-        // console.log('Comment: ', e.target.value);
-        this.setState({
-            comment : e.target.value
-        });
-    }
-
-    saveExpense = () => {
-        //console.log(this.state.expenseDate+' '+this.state.paymentType+' '+this.state.expenseCategory+' '+this.state.expenseAmount);
-        this.setState({
-            loading : {
-                save : true
-            }
-        });
-        let expDate = new Date(this.state.expenseDate);
-        let expData;
-
-        // 02/19/2020 - for Multi-Currency implementation
-        // to get the exchange rates and converting it to an object
-        let rates = {};
-        let selectedCurrencies = this.state.currencyConversions.get(this.state.selectedCurrency);
-        for(let currency of selectedCurrencies.keys()) {
-            //console.log(currency+' '+selectedCurrencies.get(currency));
-            rates[currency] = selectedCurrencies.get(currency);
-        }
-        rates.timeStamp = getSystemTime();
-
-        if (this.state.incomeToggle) {
-            expData = {
-                username: this.state.username,
-                year: expDate.getFullYear(),
-                logIncome: this.state.incomeToggle,
-                sort: { date: 1 },
-                income: {
-                    date: this.state.expenseDate,
-                    income_type: this.state.incomeType,
-                    amount: parseFloat(this.state.expenseAmount),
-                    comment: this.state.comment,
-                    currency: this.state.selectedCurrency,
-                    rates : rates // added Exchange Rates for Multi-Currency implementation
-                }
-            };
-        } else {
-            expData = {
-                username: this.state.username,
-                year: expDate.getFullYear(),
-                logIncome: this.state.incomeToggle,
-                sort: { date: 1 },
-                data: {
-                    date: this.state.expenseDate,
-                    type: this.state.paymentType,
-                    category: this.state.expenseCategory,
-                    sub_category: this.state.expenseSubCategory,
-                    amount: parseFloat(this.state.expenseAmount),
-                    currency: this.state.selectedCurrency,
-                    rates : rates // added Exchange Rates for Multi-Currency implementation
-                }
-            };
-        }
-
-        axios.post(config.dataService.saveExpenseWithSort, expData)
-            .then((resp) => {
-                console.log('expense saved successfully ', expData);
-
-                // expense values are rested after successfull save
-                let subCategories = this.setExpenseSubCategories(config.expenseDefaults.defaultExpenseCategory);
-
-                this.setState({
-                    toggleAddExpense: false,
-                    updateData: true,
-                    expenseDate: parseDate(null),
-                    paymentType: config.expenseDefaults.defaultPaymentType,
-                    expenseCategory: config.expenseDefaults.defaultExpenseCategory,
-                    expenseSubCategories: subCategories,
-                    expenseSubCategory: (subCategories) ? subCategories[0] : '',
-                    expenseAmount: config.expenseDefaults.defaultAmount,
-                    selectedCurrency: config.expenseDefaults.defaultCurrency,
-                    incomeToggle: false,
-                    loading : {
-                        save : false
-                    }
-                });
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
     }
 
     getExpenses = () => {
@@ -452,215 +271,122 @@ export class ExpenseDataContainer extends React.Component {
         });
         return promise;
     }
+
+    hideAddExpenseModal = (saveOperation) => {
+        this.setState({
+            toggleAddExpense : false,
+            updateData : saveOperation ? true : false
+        });
+    }
     
     render() {
         return (
-            this.state.toggleAddExpense ? 
-            (<div className="container">
-                <div className="row">
-                    <div className="col-3"></div>
-                    <div className="col-6">
-                        <div className="form-group">
-                                <label htmlFor="expensePaymentType">Log Type</label>
-                                <select className="form-control" id="expensePaymentType" onChange={this.handleIncomeToggle}>
-                                    <option>Expense</option>
-                                    <option>Income</option>
+            <div>
+                <ExpenseLogger showModal={this.state.toggleAddExpense} onHide={this.hideAddExpenseModal} currencyConversions={this.state.currencyConversions} username={this.state.username}/>
+                <div className="container">
+                    <div className="row">
+                        <div className="col-2">
+                            <div className="form-group">
+                                <select className="form-control" id="monthSelection" value={this.state.selectedMonth} onChange={this.monthHandler}>
+                                    {this.state.months.map(month => <option key={month}>{month}</option>)}
                                 </select>
                             </div>
-                    </div>
-                    <div className="col-2"></div>
-                </div>
-                {this.state.incomeToggle ? (<div className="row" id="addExpense">
-                    <div className="col-3"></div>
-                    <div className="col-6">
-                        <form>
-                            <div className="form-group">
-                                <label htmlFor="expenseDate">Date</label>
-                                <input type="date" className="form-control" id="expenseDate" onChange={this.expenseDateChangeHandler} value={this.state.expenseDate}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="incomeType">Income Type</label>
-                                <select className="form-control" id="incomeType" value={this.state.incomeType} onChange={this.incomeTypeHandler}>
-                                    {this.state.incomeTypeList.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseAmount">Amount</label>
-                                <input type="number" className="form-control" id="expenseAmount" value={this.state.expenseAmount} onChange={this.expenseAmountHandler}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseComment">Comment</label>
-                                <textarea className="form-control" id="expenseComment" value={this.state.comment} onChange={this.commentHandler}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseCurrency">Currency</label>
-                                <select className="form-control" id="expenseCurrency" value={this.state.selectedCurrency} onChange={this.currencyHandler}>
-                                    {this.state.currency.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                        </form>
-                    </div>
-                    <div className="col-2"></div>
-                </div>):(<div className="row" id="addExpense">
-                    <div className="col-3"></div>
-                    <div className="col-6">
-                        <form>
-                            <div className="form-group">
-                                <label htmlFor="expenseDate">Date</label>
-                                <input type="date" className="form-control" id="expenseDate" onChange={this.expenseDateChangeHandler} value={this.state.expenseDate}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expensePaymentType">Payment Type</label>
-                                <select className="form-control" id="expensePaymentType" value={this.state.paymentType} onChange={this.paymentTypeHandler}>
-                                    {this.state.paymentTypes.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseCategory">Expense Category</label>
-                                <select className="form-control" id="expenseCategory" value={this.state.expenseCategory} onChange={this.expenseCategoryHandler}>
-                                    {this.state.expenseCategories.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseSubCategory">Expense Sub-Category</label>
-                                <select className="form-control" id="expenseSubCategory" value={this.state.expenseSubCategory} onChange={this.expenseSubCategoryHandler}>
-                                    {this.state.expenseSubCategories.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseAmount">Amount</label>
-                                <input type="number" className="form-control" id="expenseAmount" value={this.state.expenseAmount} onChange={this.expenseAmountHandler}/>
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="expenseCurrency">Currency</label>
-                                <select className="form-control" id="expenseCurrency" value={this.state.selectedCurrency} onChange={this.currencyHandler}>
-                                    {this.state.currency.map(type => <option key={type}>{type}</option>)}
-                                </select>
-                            </div>
-                        </form>
-                    </div>
-                    <div className="col-2"></div>
-                </div>)}
-                
-                <div className="row">
-                    <div className="col-3"></div>
-                    <div className="col-6">
-                        <div className="addExpenseOperations">
-                            <button type="button" className="btn btn-outline-success addExpBtns" onClick={this.cancelAddExpense}>Cancel</button>
-                            {!this.state.loading.save ? <button type="button" className="btn btn-outline-success addExpBtns" onClick={this.saveExpense}>Save</button>: 
-                            <div className="btn loading">
-                                <ReactLoading type="bubbles" color="#15eb68"/>
-                            </div>}
+                        </div>
+                        <div className="col">
+                        </div>
+                        <div>
+                            <button type="button" className="btn btn-outline-success btn-sm" onClick={this.addExpense}>Log Expense/Income</button>
+                        </div>
+                        <div className="col-3">
+                            <form className="form-inline my-2 my-lg-0 searchBtnCustom">
+                                <input className="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search" onChange={this.searchHandler}/>
+                            </form>
                         </div>
                     </div>
-                    <div className="col-2"></div>
-                </div>
-            </div>
-            )
-                :
-            <div className="container">
-                <div className="row">
-                    <div className="col-2">
-                        <div className="form-group">
-                            <select className="form-control" id="monthSelection" value={this.state.selectedMonth} onChange={this.monthHandler}>
-                                {this.state.months.map(month => <option key={month}>{month}</option>)}
-                            </select>
+                    <div className="row">
+                        <div className="col center">
+                        {
+                            this.state.loading.data ? 
+                                (<div className="btn loading">
+                                    <ReactLoading type="bubbles" color="#15eb68"/>
+                                </div>) : this.state.hBarData.length > 0 ? <HorizontalBarChart data={this.state.hBarData} currency={this.props.currency} handleOnClick={(label) => {console.log('label container: ',label)}}/> : ''
+                        }
                         </div>
                     </div>
-                    <div className="col">
-                    </div>
-                    <div>
-                        <button type="button" className="btn btn-outline-success btn-sm" onClick={this.addExpense}>Log Expense/Income</button>
-                    </div>
-                    <div className="col-3">
-                        <form className="form-inline my-2 my-lg-0 searchBtnCustom">
-                            <input className="form-control form-control-sm mr-sm-2" type="search" placeholder="Search" aria-label="Search" onChange={this.searchHandler}/>
-                        </form>
-                    </div>
-                </div>
-                <div className="row">
-                    <div className="col center">
                     {
                         this.state.loading.data ? 
-                            (<div className="btn loading">
-                                <ReactLoading type="bubbles" color="#15eb68"/>
-                            </div>) : this.state.hBarData.length > 0 ? <HorizontalBarChart data={this.state.hBarData} currency={this.props.currency} handleOnClick={(label) => {console.log('label container: ',label)}}/> : ''
+                        (<div className="row">
+                            <div className="col center">
+                                <div className="btn loading">
+                                    <ReactLoading type="bubbles" color="#15eb68"/>
+                                </div>
+                            </div>
+                        </div>) :
+                        this.state.displayedIncomeData.length > 0 ?  
+                        (<div className="row" id="incomeTable">
+                        <table className="table table-sm" >
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Income Type</th>
+                                    <th scope="col">Comment</th>
+                                    <th scope="col">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenceData">
+                                {this.state.displayedIncomeData.map(income =>
+                                    <tr key={income.no}>
+                                        <th scope="row">{income.no}</th>
+                                        <td>{income.date}</td>
+                                        <td>{income.income_type}</td>
+                                        <td className="wrapText">{income.comment}</td>
+                                        {/* 2/22/2020 - modified to use convAmount for Multi-Currency implementation */}
+                                        <td>{(income.convCurrency === 'USD') ? '$'+income.convAmount: income.convAmount+' '+income.convCurrency}</td>
+                                    </tr>)}
+                            </tbody>
+                        </table>
+                        </div>): ''
                     }
-                    </div>
+                    {
+                        this.state.loading.data ? 
+                        (<div className="row">
+                            <div className="col center">
+                                <div className="btn loading">
+                                    <ReactLoading type="bubbles" color="#15eb68"/>
+                                </div>
+                            </div>
+                        </div>) :
+                        this.state.displayedData.length > 0 ? 
+                        (<div className="row" id="expenceTable">
+                        <table className="table table-sm" >
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Date</th>
+                                    <th scope="col">Payment Type</th>
+                                    <th scope="col">Expense Category</th>
+                                    <th scope="col">Expense Sub-Category</th>
+                                    <th scope="col">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenceData">
+                                {this.state.displayedData.map(exp =>
+                                    <tr key={exp.no}>
+                                        <th scope="row">{exp.no}</th>
+                                        <td>{exp.date}</td>
+                                        <td>{exp.type}</td>
+                                        <td>{exp.category}</td>
+                                        <td>{exp.sub_category}</td>
+                                        {/* 2/22/2020 - modified to use convAmount for Multi-Currency implementation */}
+                                        <td>{(exp.convCurrency === 'USD') ? '$'+exp.convAmount: exp.convAmount+' '+exp.convCurrency}</td>
+                                    </tr>)}
+                            </tbody>
+                        </table>
+                    </div>) : ''
+                    }
+                    
                 </div>
-                {
-                    this.state.loading.data ? 
-                    (<div className="row">
-                        <div className="col center">
-                            <div className="btn loading">
-                                <ReactLoading type="bubbles" color="#15eb68"/>
-                            </div>
-                        </div>
-                    </div>) :
-                    this.state.displayedIncomeData.length > 0 ?  
-                    (<div className="row" id="incomeTable">
-                    <table className="table table-sm" >
-                        <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Income Type</th>
-                                <th scope="col">Comment</th>
-                                <th scope="col">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenceData">
-                            {this.state.displayedIncomeData.map(income =>
-                                <tr key={income.no}>
-                                    <th scope="row">{income.no}</th>
-                                    <td>{income.date}</td>
-                                    <td>{income.income_type}</td>
-                                    <td className="wrapText">{income.comment}</td>
-                                    {/* 2/22/2020 - modified to use convAmount for Multi-Currency implementation */}
-                                    <td>{(income.convCurrency === 'USD') ? '$'+income.convAmount: income.convAmount+' '+income.convCurrency}</td>
-                                </tr>)}
-                        </tbody>
-                    </table>
-                    </div>): ''
-                }
-                {
-                    this.state.loading.data ? 
-                    (<div className="row">
-                        <div className="col center">
-                            <div className="btn loading">
-                                <ReactLoading type="bubbles" color="#15eb68"/>
-                            </div>
-                        </div>
-                    </div>) :
-                    this.state.displayedData.length > 0 ? 
-                    (<div className="row" id="expenceTable">
-                    <table className="table table-sm" >
-                        <thead>
-                            <tr>
-                                <th scope="col">#</th>
-                                <th scope="col">Date</th>
-                                <th scope="col">Payment Type</th>
-                                <th scope="col">Expense Category</th>
-                                <th scope="col">Expense Sub-Category</th>
-                                <th scope="col">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expenceData">
-                            {this.state.displayedData.map(exp =>
-                                <tr key={exp.no}>
-                                    <th scope="row">{exp.no}</th>
-                                    <td>{exp.date}</td>
-                                    <td>{exp.type}</td>
-                                    <td>{exp.category}</td>
-                                    <td>{exp.sub_category}</td>
-                                    {/* 2/22/2020 - modified to use convAmount for Multi-Currency implementation */}
-                                    <td>{(exp.convCurrency === 'USD') ? '$'+exp.convAmount: exp.convAmount+' '+exp.convCurrency}</td>
-                                </tr>)}
-                        </tbody>
-                    </table>
-                </div>) : ''
-                }
-                
             </div>
         );
     }
