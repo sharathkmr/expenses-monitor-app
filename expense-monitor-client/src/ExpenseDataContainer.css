@@ -14,10 +14,10 @@
     margin-right: 0.4em;
 } */
 
-/* .wrapText {
+.wrapText {
     word-break: break-all;
     max-width: 20em;
-} */
+}
 
 .loading {
     cursor : auto
